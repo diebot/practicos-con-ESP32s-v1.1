@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Taller ESP32 — Sensores y Actuadores</title>
+<style>
+:root{--bg:#0b1e17;--panel:#112d22;--panel2:#173b2d;--border:#235843;--text:#f0f6f3;--muted:#8ea89d;--copper:#e29b47;--glow:rgba(226,155,71,.4);--ok:#4cd98a;--bad:#ff6b5b}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:radial-gradient(circle at 50% 0%,#15392b 0%,var(--bg) 80%) fixed;color:var(--text);padding:16px 12px 60px}
+.wrap{max-width:980px;margin:0 auto}
+header{text-align:center;margin-bottom:14px}
+.kick{font:12px monospace;color:var(--copper)}
+h1{font-size:clamp(20px,4vw,28px);margin:4px 0}
+.sub{color:var(--muted);font-size:14px}
+.sub a,.card a{color:var(--copper)}
+.prog{height:8px;border-radius:5px;background:var(--panel);border:1px solid var(--border);margin:12px auto 0;max-width:420px;overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--ok);transition:width .3s}
+nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:14px 0}
+nav button{background:var(--panel);color:var(--text);border:1px solid var(--border);border-radius:20px;padding:7px 14px;font-size:13px;cursor:pointer}
+nav button.on{border-color:var(--copper);background:var(--glow)}
+nav small{color:var(--muted);margin-left:4px}
+.panel{display:none}.panel.on{display:block}
+h2{font-size:20px;margin-bottom:4px}
+.obj{color:#dbe7e1;font-size:14px;margin-bottom:12px}
+.warn{background:rgba(255,107,91,.12);border:1px solid var(--bad);color:#ffb3a9;border-radius:8px;padding:9px 12px;font-size:13px;margin-bottom:12px}
+.card{background:rgba(17,45,34,.9);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px}
+.card h3{font-size:14px;color:var(--copper);margin-bottom:10px}
+ul.chk,ul.plain{list-style:none}
+ul.chk li{margin:6px 0}
+ul.chk label{display:flex;gap:9px;align-items:flex-start;cursor:pointer;font-size:14px;line-height:1.35}
+ul.chk input{width:18px;height:18px;margin-top:1px;accent-color:var(--ok);flex:none}
+ul.chk input:checked+span{opacity:.5;text-decoration:line-through}
+ul.plain li{font-size:13.5px;margin:6px 0 6px 16px;list-style:disc;color:#dbe7e1}
+.sw{display:inline-block;width:11px;height:11px;border-radius:50%;margin-right:4px;vertical-align:-1px}
+.conn{display:flex;gap:18px;flex-wrap:wrap;align-items:flex-start}
+.conn ul{flex:1 1 300px}
+.bdw{padding:0 34px;margin:0 auto}
+.bd{position:relative;width:200px;height:400px}
+.bd img{width:100%;height:100%;object-fit:contain;display:block}
+.mk{position:absolute;width:11px;height:11px;border-radius:50%;background:var(--c);transform:translate(-50%,-50%);top:calc(4.3% + (92.6% - 4.3%) * var(--i) / 18);box-shadow:0 0 0 2px #000a,0 0 10px var(--c)}
+.mk.l{left:10px}.mk.r{left:calc(100% - 10px)}
+.mk b{position:absolute;top:50%;transform:translateY(-50%);font:700 10px monospace;color:var(--text)}
+.mk.l b{right:15px}.mk.r b{left:15px}
+pre{background:#0a1913;border:1px solid var(--border);border-radius:8px;padding:12px;font:12px/1.5 "SFMono-Regular",Consolas,monospace;color:#cfe8dc;overflow:auto;max-height:340px}
+.cp{float:right;margin:-2px 0 6px 8px;background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:12px;cursor:pointer}
+.cp:hover,.btn:hover{border-color:var(--copper)}
+details{margin-top:10px;font-size:13.5px}
+summary{cursor:pointer;color:var(--copper)}
+details ul{margin-top:6px}
+.btn{background:var(--panel2);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:9px 16px;font-size:14px;cursor:pointer;user-select:none;touch-action:none}
+.btn:active{background:var(--glow)}
+.row{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.lamp{width:46px;height:46px;border-radius:50%;background:#1b382d;border:2px solid var(--border);display:grid;place-items:center;font-size:9px;color:var(--muted)}
+.lamp.on{background:#ffd76a;color:#3a2a00;box-shadow:0 0 22px 6px rgba(255,215,106,.6)}
+.op{font-size:13px;color:var(--muted)}
+.ser{background:#06110c;border:1px solid var(--border);border-radius:6px;padding:8px 10px;font:12px/1.5 monospace;color:#7CFFB2;min-height:34px;white-space:pre}
+.lb{display:block;font-size:13px;margin-bottom:4px}
+input[type=range]{width:100%;accent-color:var(--copper);margin:4px 0 10px}
+.dial{width:160px;height:82px;border-radius:160px 160px 0 0;border:2px solid var(--border);border-bottom:0;position:relative;overflow:hidden;margin:6px 0}
+.needle{position:absolute;left:50%;bottom:0;width:3px;height:76px;background:var(--copper);transform-origin:bottom center;transform:translateX(-50%) rotate(-90deg)}
+.track{position:relative;height:60px;background:#0a1913;border:1px solid var(--border);border-radius:8px;margin-bottom:10px}
+.sn{position:absolute;left:6px;top:18px;font-size:10px;background:var(--panel2);border:1px solid var(--border);border-radius:4px;padding:6px 4px}
+.ob{position:absolute;top:10px;width:14px;height:40px;background:var(--copper);border-radius:3px;left:calc(64px + (100% - 84px) * var(--d,40) / 100)}
+.thr{position:absolute;top:0;bottom:0;border-left:2px dashed var(--bad);left:calc(64px + (100% - 84px) * .15 + 7px)}
+.bz{font-size:22px;opacity:.25}.bz.on{opacity:1;animation:p .5s infinite alternate}
+@keyframes p{to{transform:scale(1.25)}}
+@media (prefers-reduced-motion:reduce){.bz.on{animation:none}}
+.pad{position:relative;width:190px;height:190px;background:#0a1913;border:1px solid var(--border);border-radius:10px;touch-action:none;flex:none}
+.dz{position:absolute;top:0;bottom:0;left:calc(1850 / 4095 * 100%);width:calc(400 / 4095 * 100%);background:var(--glow)}
+.knob{position:absolute;width:34px;height:34px;border-radius:50%;background:var(--copper);transform:translate(-50%,-50%);box-shadow:0 2px 8px #000}
+.hint{font-size:12px;color:var(--muted);margin-top:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="kick">TALLER · ESP32</p>
+    <h1>Sensores y Actuadores con ESP32</h1>
+    <p class="sub">Seguí cada práctico paso a paso: materiales, conexión, código y simulador. <a href="esp32-pinout.html" target="_blank">Ver pinout completo</a></p>
+    <div class="prog"><i id="bar"></i></div>
+  </header>
+  <nav id="tabs"></nav>
+  <main id="main"></main>
+</div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+
+/* Posición de cada pin en la placa: [lado, índice 0..18] */
+const PIN_POS = {
+  '3V3':['L',0],'GPIO36':['L',2],'GPIO39':['L',3],'GPIO34':['L',4],'GPIO35':['L',5],'GPIO32':['L',6],'GPIO33':['L',7],
+  'GPIO25':['L',8],'GPIO26':['L',9],'GPIO27':['L',10],'GPIO14':['L',11],'GPIO12':['L',12],'GND':['L',13],'GPIO13':['L',14],'VIN':['L',18],
+  'GPIO23':['R',1],'GPIO22':['R',2],'GPIO21':['R',5],'GPIO19':['R',7],'GPIO18':['R',8],'GPIO5':['R',9],'GPIO17':['R',10],
+  'GPIO16':['R',11],'GPIO4':['R',12],'GPIO0':['R',13],'GPIO2':['R',14],'GPIO15':['R',15]
+};
+const G = '#b58cf0', V = '#5b8cff';   // color de GND y de 5V (VIN)
+
+const PRACTICOS = [
+{
+  title: 'Enclavamiento digital (pulsador + relay)',
+  obj: 'Controlar el encendido y apagado de un módulo de potencia con un pulsador con memoria de estado (toggle).',
+  warn: '<b>Seguridad:</b> el módulo relay soporta hasta 250 V. En el taller usá una carga de bajo voltaje (LED, buzzer, lámpara de 12 V) y nunca conectes red eléctrica sin el docente.',
+  mats: ['1× ESP-32S (38 pines)', '1× Módulo relay de 1 canal', '1× Pulsador táctil', 'Protoboard y cables'],
+  wires: [
+    ['Pulsador · terminal A', 'GPIO18', '#ff9f7a'], ['Pulsador · terminal B', 'GND', G],
+    ['Relay · VCC', 'VIN', V], ['Relay · GND', 'GND', G], ['Relay · IN', 'GPIO23', '#f5d020']
+  ],
+  code: `#define PIN_PULSADOR 18
+#define PIN_RELAY 23
+
+bool estadoRelay = false;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(PIN_PULSADOR, INPUT_PULLUP);
+  pinMode(PIN_RELAY, OUTPUT);
+  digitalWrite(PIN_RELAY, HIGH); // Apagado en módulos Active-LOW
+}
+
+void loop() {
+  if (digitalRead(PIN_PULSADOR) == LOW) {
+    estadoRelay = !estadoRelay;
+    digitalWrite(PIN_RELAY, estadoRelay ? LOW : HIGH);
+    Serial.println(estadoRelay ? "RELAY: ACTIVADO" : "RELAY: DESACTIVADO");
+    while (digitalRead(PIN_PULSADOR) == LOW) { delay(10); }
+    delay(50); // Antirrebote mecánico
+  }
+}`,
+  explica: ['<code>INPUT_PULLUP</code> deja el pin en HIGH; al apretar el pulsador baja a LOW (por eso el otro terminal va a GND).', '<code>estadoRelay = !estadoRelay</code> invierte el estado en cada pulsación: eso es el toggle o "memoria".', 'El módulo es activo en LOW: LOW enciende el relay y HIGH lo apaga.', 'El <code>while</code> espera a que sueltes y el <code>delay(50)</code> filtra el rebote mecánico.'],
+  falla: ['El relay cambia varias veces con una sola pulsación: revisá que estén el <code>while</code> y el <code>delay(50)</code>.', 'El módulo no enciende: su VCC va a VIN (5 V), no a 3V3.', 'Funciona al revés: tu módulo es activo en HIGH; invertí LOW y HIGH.'],
+  sim: sim1
+},
+{
+  title: 'Control proporcional (potenciómetro + servo SG90)',
+  obj: 'Convertir una tensión leída por el ADC en la posición angular de un servomotor.',
+  mats: ['1× ESP-32S', '1× Potenciómetro 10 kΩ', '1× Servomotor SG90', '1× Capacitor 470 µF / 25 V', 'Librería <b>ESP32Servo</b> (Gestor de librerías del IDE)'],
+  wires: [
+    ['Potenciómetro · extremo 1', 'GND', G], ['Potenciómetro · central', 'GPIO34', '#f5d020'], ['Potenciómetro · extremo 2', '3V3', '#ffa94d'],
+    ['Servo · rojo', 'VIN', V], ['Servo · marrón', 'GND', G], ['Servo · naranja', 'GPIO21', '#ff9f7a'],
+    ['Capacitor · pata corta (−)', 'GND', G], ['Capacitor · pata larga (+)', 'VIN', V]
+  ],
+  code: `#include <ESP32Servo.h>
+#define PIN_POT 34
+#define PIN_SERVO 21
+
+Servo miServo;
+
+void setup() {
+  Serial.begin(115200);
+  miServo.setPeriodHertz(50);
+  miServo.attach(PIN_SERVO, 500, 2400);
+}
+
+void loop() {
+  int lecturaADC = analogRead(PIN_POT);
+  int angulo = map(lecturaADC, 0, 4095, 0, 180);
+  angulo = constrain(angulo, 0, 180);
+  miServo.write(angulo);
+  Serial.printf("ADC: %4d | Ángulo: %3d°\\n", lecturaADC, angulo);
+  delay(20);
+}`,
+  explica: ['El ADC entrega valores de 0 a 4095 (12 bits); <code>map()</code> los lleva a 0–180°.', '<code>attach(pin, 500, 2400)</code> fija el ancho de pulso (µs) de los extremos del SG90.', 'El capacitor absorbe los picos de corriente del servo para que el ESP32 no se reinicie.'],
+  falla: ['El ESP32 se reinicia al mover el servo: revisá el capacitor (polaridad) y que el servo vaya a VIN (5 V).', 'El servo no llega a 0° ni a 180°: el ADC del ESP32 no es lineal en los extremos; ajustá el rango del <code>map()</code>.', 'La lectura salta: usá cables cortos y GND común.'],
+  sim: sim2
+},
+{
+  title: 'Radar ultrasónico con filtro (HC-SR04 + buzzer)',
+  obj: 'Medir distancias con ultrasonido, descartar lecturas erróneas fuera de rango y activar una alarma sonora.',
+  mats: ['1× Sensor ultrasónico HC-SR04', '1× Buzzer activo', '3× Resistencia 1 kΩ (una es R1 y dos en serie forman R2 = 2 kΩ)', '1× ESP-32S, protoboard y cables'],
+  wires: [
+    ['HC-SR04 · VCC', 'VIN', V], ['HC-SR04 · GND', 'GND', G], ['HC-SR04 · TRIG', 'GPIO5', '#f5d020'],
+    ['HC-SR04 · ECHO', 'R1 (1 kΩ)', '#ff9f7a'], ['R1 → nodo del divisor', 'GPIO18', '#ff9f7a'], ['Nodo → R2 (2 kΩ)', 'GND', G],
+    ['Buzzer · (+)', 'GPIO19', '#5fe3c0'], ['Buzzer · (−)', 'GND', G]
+  ],
+  code: `#define PIN_TRIG 5
+#define PIN_ECHO 18
+#define PIN_BUZZER 19
+
+const int DISTANCIA_UMBRAL = 15; // cm
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(PIN_TRIG, OUTPUT);
+  pinMode(PIN_ECHO, INPUT);
+  pinMode(PIN_BUZZER, OUTPUT);
+  digitalWrite(PIN_TRIG, LOW);
+  digitalWrite(PIN_BUZZER, LOW);
+}
+
+void loop() {
+  // Pulso de disparo de 10 us
+  digitalWrite(PIN_TRIG, LOW);
+  delayMicroseconds(2);
+  digitalWrite(PIN_TRIG, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(PIN_TRIG, LOW);
+
+  // Timeout de 25000 us (alcance máx ~4.2m) para no congelar el loop
+  long duracion = pulseIn(PIN_ECHO, HIGH, 25000);
+  float distancia = (duracion * 0.0343) / 2.0;
+
+  // FILTRO: Solo considerar mediciones válidas (>= 2 cm)
+  if (distancia >= 2.0 && distancia <= DISTANCIA_UMBRAL) {
+    digitalWrite(PIN_BUZZER, HIGH);
+    Serial.printf("¡OBSTÁCULO! Distancia: %.1f cm\\n", distancia);
+  } else {
+    digitalWrite(PIN_BUZZER, LOW);
+    if (distancia < 2.0) {
+      Serial.println("Fuera de rango o sin eco.");
+    } else {
+      Serial.printf("Despejado: %.1f cm\\n", distancia);
+    }
+  }
+  delay(60);
+}`,
+  explica: ['TRIG dispara un pulso de 10 µs; ECHO responde con un pulso cuya duración es proporcional a la distancia.', 'Distancia (cm) = duración × 0,0343 ÷ 2 (velocidad del sonido ≈ 343 m/s, ida y vuelta).', '<code>pulseIn(..., 25000)</code> devuelve 0 si no hay eco; el filtro descarta esa lectura (menos de 2 cm).', 'ECHO sale a 5 V: el divisor 1 kΩ + 2 kΩ lo baja a ≈ 3,3 V para proteger al ESP32.'],
+  falla: ['Siempre dice "Fuera de rango": revisá VCC a 5 V y que TRIG y ECHO no estén cruzados.', 'Lecturas erráticas: el objeto está en ángulo o es una superficie blanda.', 'El buzzer no suena: verificá la polaridad y que sea un buzzer <b>activo</b>.'],
+  sim: sim3
+},
+{
+  title: 'Consola de control con zona muerta y suavizado',
+  obj: 'Controlar un servo con un joystick eliminando oscilaciones en reposo y usar el pulsador como gatillo.',
+  mats: ['1× Módulo joystick', '1× Servomotor SG90', '1× Buzzer', '1× Capacitor 470 µF', '1× ESP-32S, protoboard y cables', 'Librería <b>ESP32Servo</b>'],
+  wires: [
+    ['Joystick · GND', 'GND', G], ['Joystick · +5V (¡a 3,3 V!)', '3V3', '#ffa94d'], ['Joystick · VRx', 'GPIO34', '#f5d020'],
+    ['Joystick · VRy', 'GPIO35', '#5fe3c0'], ['Joystick · SW', 'GPIO22', '#ff9f7a'],
+    ['Servo · rojo (VIN)', 'VIN', V], ['Servo · marrón (GND)', 'GND', G], ['Servo · señal', 'GPIO21', '#e84393'],
+    ['Buzzer · (+)', 'GPIO19', '#c9f542'], ['Buzzer · (−)', 'GND', G]
+  ],
+  code: `#include <ESP32Servo.h>
+#define PIN_JOY_X 34
+#define PIN_JOY_Y 35
+#define PIN_JOY_SW 22
+#define PIN_SERVO 21
+#define PIN_BUZZER 19
+
+Servo servoMando;
+int anguloActual = 90;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(PIN_JOY_SW, INPUT_PULLUP);
+  pinMode(PIN_BUZZER, OUTPUT);
+  servoMando.setPeriodHertz(50);
+  servoMando.attach(PIN_SERVO, 500, 2400);
+  servoMando.write(anguloActual);
+}
+
+void loop() {
+  int x = analogRead(PIN_JOY_X);
+  int y = analogRead(PIN_JOY_Y);
+  bool gatillo = (digitalRead(PIN_JOY_SW) == LOW);
+
+  // 1. ZONA MUERTA (Deadzone): Evita zumbidos mecánicos cerca del centro
+  int anguloObjetivo;
+  if (x >= 1850 && x <= 2250) {
+    anguloObjetivo = 90;
+  } else {
+    anguloObjetivo = map(x, 0, 4095, 0, 180);
+    anguloObjetivo = constrain(anguloObjetivo, 0, 180);
+  }
+
+  // 2. SUAVIZADO: Transición progresiva para cuidar los engranajes
+  if (anguloActual < anguloObjetivo) {
+    anguloActual++;
+  } else if (anguloActual > anguloObjetivo) {
+    anguloActual--;
+  }
+  servoMando.write(anguloActual);
+
+  // 3. GATILLO SONORO
+  digitalWrite(PIN_BUZZER, gatillo ? HIGH : LOW);
+
+  Serial.printf("X: %4d | Ángulo: %3d° | Gatillo: %s\\n", x, anguloActual,
+                gatillo ? "DISPARO" : "REPOSO");
+  delay(15);
+}`,
+  explica: ['Zona muerta: entre 1850 y 2250 el objetivo se fija en 90°, porque el joystick nunca marca exactamente el centro (2048) y el servo temblaría.', 'Suavizado: el ángulo actual avanza 1° por ciclo hacia el objetivo, así el servo no da tirones.', 'El joystick se alimenta con 3,3 V para que el ADC nunca reciba más de 3,3 V.', 'VRy (GPIO35) se lee pero no se usa: queda como desafío para un segundo servo o un tono en el buzzer.'],
+  falla: ['El servo tiembla en reposo: ampliá la zona muerta (por ejemplo 1750 a 2350).', 'El ESP32 se reinicia: revisá el capacitor y la alimentación del servo por VIN.', 'El movimiento va al revés: usá <code>map(x, 0, 4095, 180, 0)</code>.'],
+  sim: sim4
+}
+];
+
+/* ---------- utilidades de simulación ---------- */
+const map = (x, a, b, c, d) => Math.trunc((x - a) * (d - c) / (b - a) + c);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const needle = (el, a) => { el.style.transform = `translateX(-50%) rotate(${a - 90}deg)`; };
+const ser = (el, t) => {
+  const d = document.createElement('div'); d.textContent = t; el.appendChild(d);
+  while (el.children.length > 6) el.firstChild.remove();
+};
+const pad4 = v => String(v).padStart(4), pad3 = v => String(v).padStart(3);
+
+function sim1(el) {
+  el.innerHTML = `<div class="row"><button class="btn" id="b1">Pulsador</button><div class="lamp" id="l1">CARGA</div>
+    <label class="op"><input type="checkbox" id="d1"> sin antirrebote</label></div><div class="ser" id="s1"></div>
+    <p class="hint">Sin antirrebote, una sola pulsación real puede contarse varias veces y el relay queda en cualquier estado.</p>`;
+  let on = false;
+  $('#b1', el).addEventListener('click', () => {
+    const n = $('#d1', el).checked ? 2 + Math.floor(Math.random() * 4) : 1;
+    for (let k = 0; k < n; k++) setTimeout(() => {
+      on = !on;
+      $('#l1', el).classList.toggle('on', on);
+      ser($('#s1', el), on ? 'RELAY: ACTIVADO' : 'RELAY: DESACTIVADO');
+    }, k * 40);
+  });
+}
+
+function sim2(el) {
+  el.innerHTML = `<label class="lb">Potenciómetro (lectura ADC): <b id="a2"></b></label>
+    <input type="range" id="r2" min="0" max="4095" value="2048"><div class="dial"><div class="needle" id="n2"></div></div><div class="ser" id="s2"></div>`;
+  const r = $('#r2', el);
+  const upd = () => {
+    const v = +r.value, a = clamp(map(v, 0, 4095, 0, 180), 0, 180);
+    $('#a2', el).textContent = v; needle($('#n2', el), a);
+    $('#s2', el).textContent = `ADC: ${pad4(v)} | Ángulo: ${pad3(a)}°`;
+  };
+  r.addEventListener('input', upd); upd();
+}
+
+function sim3(el) {
+  el.innerHTML = `<label class="lb">Distancia al obstáculo: <b id="d3"></b> cm</label>
+    <input type="range" id="r3" min="0" max="100" step="0.5" value="40">
+    <div class="track" id="t3"><span class="sn">HC-SR04</span><span class="thr"></span><span class="ob"></span></div>
+    <div class="row"><span class="bz" id="z3">🔊</span><div class="ser" id="s3" style="flex:1"></div></div>
+    <p class="hint">La línea roja marca el umbral de 15 cm. Probá con menos de 2 cm para ver el filtro.</p>`;
+  const r = $('#r3', el);
+  const upd = () => {
+    const d = +r.value, alarma = d >= 2 && d <= 15;
+    $('#d3', el).textContent = d.toFixed(1); $('#t3', el).style.setProperty('--d', d);
+    $('#z3', el).classList.toggle('on', alarma);
+    $('#s3', el).textContent = alarma ? `¡OBSTÁCULO! Distancia: ${d.toFixed(1)} cm`
+      : d < 2 ? 'Fuera de rango o sin eco.' : `Despejado: ${d.toFixed(1)} cm`;
+  };
+  r.addEventListener('input', upd); upd();
+}
+
+function sim4(el) {
+  el.innerHTML = `<div class="row"><div class="pad" id="pd"><span class="dz"></span><span class="knob" id="kn"></span></div>
+    <div><div class="dial"><div class="needle" id="n4"></div></div>
+    <button class="btn" id="g4">Gatillo (mantener)</button> <span class="bz" id="z4">🔊</span></div></div>
+    <div class="ser" id="s4"></div>
+    <p class="hint">Arrastrá la perilla. La franja naranja es la zona muerta (1850–2250). El eje vertical (VRy) no se usa en el código.</p>`;
+  let x = 2048, ang = 90, trig = false, drag = false;
+  const pd = $('#pd', el), kn = $('#kn', el);
+  const place = (fx, fy) => { kn.style.left = fx * 100 + '%'; kn.style.top = fy * 100 + '%'; };
+  place(.5, .5);
+  const mv = e => {
+    const b = pd.getBoundingClientRect();
+    const fx = clamp((e.clientX - b.left) / b.width, 0, 1), fy = clamp((e.clientY - b.top) / b.height, 0, 1);
+    x = Math.round(fx * 4095); place(fx, fy);
+  };
+  const up = () => { drag = false; x = 2048; place(.5, .5); };
+  pd.addEventListener('pointerdown', e => { pd.setPointerCapture(e.pointerId); drag = true; mv(e); });
+  pd.addEventListener('pointermove', e => { if (drag) mv(e); });
+  pd.addEventListener('pointerup', up); pd.addEventListener('pointercancel', up);
+  const g = $('#g4', el);
+  g.addEventListener('pointerdown', () => { trig = true; });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => g.addEventListener(t, () => { trig = false; }));
+  setInterval(() => {
+    const obj = (x >= 1850 && x <= 2250) ? 90 : clamp(map(x, 0, 4095, 0, 180), 0, 180);
+    if (ang < obj) ang++; else if (ang > obj) ang--;
+    needle($('#n4', el), ang);
+    $('#z4', el).classList.toggle('on', trig);
+    $('#s4', el).textContent = `X: ${pad4(x)} | Ángulo: ${pad3(ang)}° | Gatillo: ${trig ? 'DISPARO' : 'REPOSO'}`;
+  }, 15);
+}
+
+/* ---------- armado de la página ---------- */
+let done = {};
+try { done = JSON.parse(localStorage.getItem('guiaESP32') || '{}'); } catch (e) {}
+const save = () => { try { localStorage.setItem('guiaESP32', JSON.stringify(done)); } catch (e) {} };
+
+const li = (id, html) => `<li><label><input type="checkbox" data-id="${id}"${done[id] ? ' checked' : ''}><span>${html}</span></label></li>`;
+
+PRACTICOS.forEach((p, i) => {
+  const n = i + 1;
+  const seen = {};
+  p.wires.forEach(([, h, c]) => { if (PIN_POS[h] && !seen[h]) seen[h] = c; });
+  const marks = Object.entries(seen).map(([h, c]) => {
+    const [s, idx] = PIN_POS[h];
+    return `<span class="mk ${s === 'L' ? 'l' : 'r'}" style="--i:${idx};--c:${c}"><b>${h.replace('GPIO', '')}</b></span>`;
+  }).join('');
+  const wires = p.wires.map(([d, h, c], j) => {
+    const link = h.startsWith('GPIO') ? `<a href="esp32-pinout.html#gpio=${h.slice(4)}" target="_blank">${h}</a>` : `<b>${h}</b>`;
+    return li(`p${n}-w${j}`, `<i class="sw" style="background:${c}"></i>${d} → ${link}`);
+  }).join('');
+
+  const sec = document.createElement('section');
+  sec.className = 'panel'; sec.id = 'p' + n;
+  sec.innerHTML = `
+    <h2>Práctico ${n}: ${p.title}</h2><p class="obj">${p.obj}</p>
+    ${p.warn ? `<div class="warn">${p.warn}</div>` : ''}
+    <div class="card"><h3>1 · Materiales</h3><ul class="chk">${p.mats.map((m, j) => li(`p${n}-m${j}`, m)).join('')}</ul></div>
+    <div class="card"><h3>2 · Conexión <small style="color:var(--muted)">(tildá cada cable cuando lo hagas)</small></h3>
+      <div class="conn"><ul class="chk">${wires}</ul>
+      <div class="bdw"><div class="bd"><img src="esp32.png" alt="ESP32">${marks}</div></div></div></div>
+    <div class="card"><h3>3 · Código</h3><button class="cp" type="button">Copiar</button><pre></pre>
+      <details><summary>¿Cómo funciona?</summary><ul class="plain">${p.explica.map(e => `<li>${e}</li>`).join('')}</ul></details></div>
+    <div class="card"><h3>4 · Simulador</h3><div class="sim"></div></div>
+    <div class="card"><h3>Si no funciona</h3><ul class="plain">${p.falla.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
+  $('pre', sec).textContent = p.code;
+  $('.cp', sec).addEventListener('click', async e => {
+    try { await navigator.clipboard.writeText(p.code); e.target.textContent = 'Copiado'; }
+    catch (err) { const r = document.createRange(); r.selectNodeContents($('pre', sec)); getSelection().removeAllRanges(); getSelection().addRange(r); e.target.textContent = 'Seleccionado'; }
+    setTimeout(() => { e.target.textContent = 'Copiar'; }, 1400);
+  });
+  p.sim($('.sim', sec));
+  $('#main').appendChild(sec);
+
+  const b = document.createElement('button');
+  b.dataset.p = n; b.innerHTML = `Práctico ${n}<small></small>`;
+  b.addEventListener('click', () => show(n));
+  $('#tabs').appendChild(b);
+});
+
+function show(n) {
+  document.querySelectorAll('.panel').forEach(s => s.classList.toggle('on', s.id === 'p' + n));
+  document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('on', +b.dataset.p === n));
+  history.replaceState(null, '', '#p' + n);
+  window.scrollTo({ top: 0 });
+}
+
+function progress() {
+  let tot = 0, ok = 0;
+  PRACTICOS.forEach((_, i) => {
+    const bx = document.querySelectorAll(`#p${i + 1} input[data-id]`);
+    const c = [...bx].filter(x => x.checked).length;
+    tot += bx.length; ok += c;
+    $(`#tabs button[data-p="${i + 1}"] small`).textContent = `${Math.round(100 * c / bx.length)}%`;
+  });
+  $('#bar').style.width = (100 * ok / tot) + '%';
+}
+
+document.addEventListener('change', e => {
+  const id = e.target.dataset && e.target.dataset.id;
+  if (!id) return;
+  done[id] = e.target.checked; save(); progress();
+});
+
+progress();
+show(+((location.hash.match(/^#p(\d)/) || [])[1]) || 1);
+</script>
+</body>
+</html>
